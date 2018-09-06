@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "container-counter.fullname" . }}
+  labels:
+    app: {{ template "container-counter.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "container-counter.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ template "container-counter.fullname" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: INSTRUMENTATION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "container-counter.fullname" . }}
+                  key: instrumentation-key
+            - name: NAMESPACE
+              value: {{ .Release.Namespace }}
+            - name: LABEL_SELECTOR
+              value: {{ required "A value is required for watch.podLabel" .Values.watch.podLabel }}
+          

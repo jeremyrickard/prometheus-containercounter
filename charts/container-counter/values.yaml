@@ -1,0 +1,9 @@
+replicaCount: 1
+image:
+  repository: jeremyrickard/container-counter
+  tag: latest 
+  pullPolicy: Always 
+watch:
+  namespace: default
+  podLabel: 
+appInsightKey: 
