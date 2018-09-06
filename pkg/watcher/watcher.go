@@ -46,32 +46,15 @@ type watcher struct {
 }
 
 func (w *watcher) Run() error {
-	w.sendUpdatedMetrics()
-	podwatcherOpts := metav1.ListOptions{
-		LabelSelector: w.podLabel,
-	}
-	tickChan := time.NewTicker(time.Second * 60).C
+	tickChan := time.NewTicker(time.Second * 30).C
 	for {
-		podwatcher, err := w.k8sClient.CoreV1().Pods(w.namespace).Watch(podwatcherOpts)
-		if err != nil {
-			log.Printf("error getting pod watcher: %s", err)
-			return err
-		}
-	loop:
-		select {
-		case _ = <-tickChan:
-			w.sendUpdatedMetrics()
-		case _, ok := <-podwatcher.ResultChan():
-			if !ok {
-				log.Println("pod watcher connection is closed unexpectedly")
-				break loop
-			}
-			w.sendUpdatedMetrics()
-		}
+		<-tickChan
+		w.sendUpdatedMetrics()
 	}
 }
 
 func (w *watcher) sendUpdatedMetrics() {
+	log.Println("attempting to get pod counts")
 	listOpts := metav1.ListOptions{
 		LabelSelector: w.podLabel,
 	}
@@ -91,6 +74,7 @@ func (w *watcher) sendUpdatedMetrics() {
 			}
 		}
 	}
+	log.Printf("Latest metrics: vpk(%v), nvkp(%v)", vkp, nvkp)
 	vkContainerCounter.Set(float64(vkp))
 	containerCounter.Set(float64(nvkp))
 }
